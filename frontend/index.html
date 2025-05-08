@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>WebSocket React Chat</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script crossorigin src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+    }
+    input {
+      padding: 8px;
+      margin-right: 10px;
+    }
+    button {
+      padding: 8px 12px;
+    }
+    ul {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h2>WebSocket Chat (React)</h2>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
+    function WebSocketChat() {
+      const [message, setMessage] = useState("");
+      const [receivedMessages, setReceivedMessages] = useState([]);
+      const socketRef = useRef(null);
+
+      useEffect(() => {
+        socketRef.current = new WebSocket("ws://localhost:3000");
+
+        socketRef.current.onopen = () => {
+          console.log("Connected to WebSocket");
+        };
+
+        socketRef.current.onmessage = (event) => {
+          setReceivedMessages((prev) => [...prev, event.data]);
+        };
+
+        socketRef.current.onclose = () => {
+          console.log("WebSocket connection closed");
+        };
+
+        return () => {
+          socketRef.current.close();
+        };
+      }, []);
+
+      const sendMessage = () => {
+        if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+          socketRef.current.send(message);
+          setMessage("");
+        }
+      };
+
+      return (
+        <div>
+          <input
+            type="text"
+            value={message}
+            placeholder="Type a message"
+            onChange={(e) => setMessage(e.target.value)}
+          />
+          <button onClick={sendMessage}>Send</button>
+          <ul>
+            {receivedMessages.map((msg, index) => (
+              <li key={index}>{msg}</li>
+            ))}
+          </ul>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<WebSocketChat />);
+  </script>
+</body>
+</html>
